@@ -1,0 +1,17 @@
+[project]
+name = "sparkland"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosonic>=0.26.0",
+    "aiosql>=13.4",
+    "alembic>=1.16.5",
+    "asyncpg>=0.30.0",
+    "fastapi>=0.118.0",
+    "loguru>=0.7.3",
+    "pydantic-settings>=2.11.0",
+    "ujson>=5.11.0",
+    "uvicorn>=0.37.0",
+]

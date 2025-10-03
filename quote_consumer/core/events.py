@@ -1,0 +1,38 @@
+
+from types import TracebackType
+
+from fastapi import FastAPI
+from loguru import logger
+
+from db.repositories import DB
+from quote_consumer.candle_processor import TradesToCandleProcessor
+from quote_consumer.core.settings import settings
+from quote_consumer.ws_connector.base import RTTradesProvider
+
+
+class LifeSpan:
+    _trades_provider: RTTradesProvider
+    _trds_to_cndl_pr: TradesToCandleProcessor
+
+    def __init__(self, app: FastAPI) -> None:
+        self._app = app
+    
+    async def __aenter__(self) -> dict:
+        logger.info("Stating application")
+        await DB.connect(dsn=str(settings.DB_SERVICE))
+        self._trades_provider = RTTradesProvider()
+        await self._trades_provider.run()
+        self._trds_to_cndl_pr = TradesToCandleProcessor(self._trades_provider.trades_queue)
+        await self._trds_to_cndl_pr.run()
+        self._app.state.in_memory_storage = self._trds_to_cndl_pr.buffer
+        return {}
+
+    async def __aexit__(
+        self, exc_type: type[BaseException], exc_val: BaseException, traceback: type[TracebackType]
+    ) -> None:
+        logger.info("Stopping application")
+        await self._trades_provider.stop()
+        await self._trds_to_cndl_pr.stop()
+        await DB.disconnect()
+        del self._app.state.in_memory_storage
+
