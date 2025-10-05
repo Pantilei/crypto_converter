@@ -1,3 +1,7 @@
+import logging
+import sys
+
+from loguru import logger
 from pydantic import BaseModel, Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,3 +27,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # type: ignore
+
+logger.configure(handlers=[{"sink": sys.stderr, "level": logging.DEBUG if settings.DEBUG else logging.INFO}])
