@@ -10,11 +10,16 @@ app = FastAPI(debug=settings.DEBUG, lifespan=LifeSpan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_headers=["*"],
     allow_methods=["*"],
     allow_credentials=True,
 )
+
+@app.get("/health", tags=["system"], include_in_schema=False)
+async def health_check() -> dict[str, str]:
+    return {"status": "ok"}
+
 
 app.include_router(api)
 

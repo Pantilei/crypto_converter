@@ -1,0 +1,72 @@
+services:
+  quote_consumer:
+    build:
+      context: .
+    image: quote_consumer:${APP_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:${QUOTE_CONSUMER_APP_PORT:-9005}/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+    command: >
+      sh -c "uv run alembic upgrade head && uv run python -m quote_consumer"
+    environment:
+      DEBUG: ${DEBUG:-false}
+      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/sparkland}
+      QUOTE_CONSUMER_APP_PORT: ${QUOTE_CONSUMER_APP_PORT:-9005}
+      TRADES_TO_CANDLES_CONFIG: ${TRADES_TO_CANDLES_CONFIG}
+
+  currency_conversion:
+    build:
+      context: .
+    image: currency_conversion:${APP_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "${CURRENCY_CONVERSION_APP_PORT:-9000}:${CURRENCY_CONVERSION_APP_PORT:-9000}"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:${CURRENCY_CONVERSION_APP_PORT:-9000}/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: >
+      sh -c "uv run python -m currency_conversion"
+    environment:
+      DEBUG: ${DEBUG:-false}
+      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/sparkland}
+      CURRENCY_CONVERSION_APP_PORT: ${CURRENCY_CONVERSION_APP_PORT:-9000}
+      QUOTE_CONSUMER_SERVICE: http://quote_consumer:${QUOTE_CONSUMER_APP_PORT:-9005}
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sparkland}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+volumes:
+  postgres_data:
