@@ -73,7 +73,7 @@ class RTTradesProvider[T: BaseTradePayload]:
         sub_msgs: list[dict[str, Any]],
         sub_msg_delay: float | None = None
     ) -> None:
-        logger.info(f"New connection to WS: {self.ws_url}")
+        logger.info(f"Connecting to WS of {self.__class__.__name__}")
         conn = await self.__ws_client__.connect(self.ws_url)
         self._connections.append(conn)
         listener = asyncio.create_task(self._listen(conn, sub_msgs, sub_msg_delay=sub_msg_delay))
@@ -89,7 +89,9 @@ class RTTradesProvider[T: BaseTradePayload]:
             self._listeners.remove(listener)
             asyncio.get_running_loop().call_later(
                 self._connection_retry_period,
-                lambda s_msgs=sub_msgs: asyncio.create_task(self._connect_and_listen(s_msgs))  # type: ignore
+                lambda s_msgs=sub_msgs: asyncio.create_task(  # type: ignore
+                    self._connect_and_listen(s_msgs, sub_msg_delay=sub_msg_delay)
+                )
             )
 
         listener.add_done_callback(__retry_callback)
@@ -114,3 +116,5 @@ class RTTradesProvider[T: BaseTradePayload]:
                 logger.debug(f"Non trade message: {msg.data}")
                 continue
             await self.__trades_queue__.put(payload.to_trade())
+
+        logger.info("Connection closed")

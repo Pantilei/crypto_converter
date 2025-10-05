@@ -44,6 +44,7 @@ class TradesToCandleProcessor:
     async def _trades_to_buffer_processor(self) -> None:
         while trade := await self._data_provider.get():
             aligned_t = Timestamp(trade.t // 1000)  # Milliseconds alined to seconds
+            # Used to control which candles must be flushed to DB
             self._tickers_with_updated_prices[trade.T].add(aligned_t)
             ticker_buffer = self._storage_buffer[trade.T]
             if (candle := ticker_buffer.get(aligned_t)) is None:
@@ -92,11 +93,14 @@ class TradesToCandleProcessor:
         candles_count = 0
         for ticker, tss in self._tickers_with_updated_prices.items():
             for ts in tss:
+                if ts not in self._storage_buffer[ticker]:
+                    continue
                 candles_count += 1
                 yield self._storage_buffer[ticker][ts]
         # Restore the state
+        tkrs_updt_price = len(self._tickers_with_updated_prices)
+        logger.info(f"Candles to flush: {candles_count}. Tickers: {tkrs_updt_price}")
         self._tickers_with_updated_prices = defaultdict(set)
-        logger.info(f"Candles to flush: {candles_count}.")
 
     async def _flush(self) -> None:
         t_start = monotonic()
