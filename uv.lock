@@ -447,7 +447,7 @@ wheels = [
 ]
 
 [[package]]
-name = "sparkland"
+name = "crypto_converter"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

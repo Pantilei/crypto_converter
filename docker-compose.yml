@@ -22,7 +22,7 @@ services:
       sh -c "uv run alembic upgrade head && uv run python -m quote_consumer"
     environment:
       DEBUG: ${DEBUG:-false}
-      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/sparkland}
+      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/crypto_converter}
       QUOTE_CONSUMER_APP_PORT: ${QUOTE_CONSUMER_APP_PORT:-9005}
       TRADES_TO_CANDLES_CONFIG: ${TRADES_TO_CANDLES_CONFIG}
 
@@ -49,7 +49,7 @@ services:
       sh -c "uv run python -m currency_conversion"
     environment:
       DEBUG: ${DEBUG:-false}
-      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/sparkland}
+      DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/crypto_converter}
       CURRENCY_CONVERSION_APP_PORT: ${CURRENCY_CONVERSION_APP_PORT:-9000}
       QUOTE_CONSUMER_SERVICE: http://quote_consumer:${QUOTE_CONSUMER_APP_PORT:-9005}
 
@@ -64,7 +64,7 @@ services:
       timeout: 5s
       retries: 5
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-sparkland}
+      POSTGRES_DB: ${POSTGRES_DB:-crypto_converter}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
 
