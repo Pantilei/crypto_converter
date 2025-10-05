@@ -2,7 +2,6 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Query
-from loguru import logger
 from pydantic import BaseModel
 from starlette.status import HTTP_404_NOT_FOUND
 
@@ -26,7 +25,7 @@ async def get_quote(
     amount: Decimal = Query(..., gt=0),
     from_: str = Query(..., alias="from", example="BTC"),
     to: str = Query(..., example="USDT"),
-    timestamp: Timestamp | None = Query(None), 
+    timestamp: Timestamp | None = Query(None),
 ) -> _Quote:
     """
     Get Quote of conversion from latest price.
@@ -37,12 +36,12 @@ async def get_quote(
     try:
         candle = await InMemoryQuoteService.get_in_memory_candle(ticker, timestamp)
     except InMemoryQuoteServiceError:
-        candle = await DB.candles_1s.get_latest_candle(ticker=ticker, timestamp=timestamp)
-    
+        candle = await DB.candles_1s.get_latest_candle(ticker=ticker, timestamp=timestamp)  # type: ignore
+
     if candle is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="conversion_not_possible")
-    
+
     if timestamp is None and candle.t < datetime.now(tz=UTC) - timedelta(minutes=1):
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="quotes_outdated")
-    
+
     return _Quote(amount=amount*candle.c, conversion_rate=candle.c)

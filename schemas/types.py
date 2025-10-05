@@ -1,7 +1,7 @@
 
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Literal, Self, TypedDict
+from typing import Any, Self
 
 from pydantic import BaseModel, GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
@@ -12,6 +12,8 @@ type Symbol = str
 class Ticker(str):
     """Ticker is composed from symbol and exchange. Ex: BTCUSDT.BINANCE"""
 
+    __slots__ = ()
+
     @property
     def symbol(self) -> str:
         return self.split(".")[0]
@@ -19,11 +21,11 @@ class Ticker(str):
     @property
     def exchange(self) -> str:
         return self.split(".")[1]
-    
+
     @classmethod
     def build(cls, symbol: Symbol, exchange: str) -> Self:
         return cls(f"{symbol}.{exchange}")
-    
+
     @classmethod
     def __get_pydantic_core_schema__(
         cls, _source, handler: GetCoreSchemaHandler
@@ -31,7 +33,7 @@ class Ticker(str):
         return core_schema.no_info_after_validator_function(
             cls, core_schema.str_schema()
         )
-    
+
     @classmethod
     def __get_pydantic_json_schema__(
         cls,

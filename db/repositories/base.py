@@ -8,7 +8,7 @@ from loguru import logger
 class BaseRepo:
     if TYPE_CHECKING:
         pool: asyncpg.Pool
-    
+
     def __init__(self, table_name: str) -> None:
         self.table_name = table_name
 
@@ -29,7 +29,7 @@ class DBManager:
     async def connect(cls, dsn: str) -> None:
         if cls == DBManager:
             raise RuntimeError("Cannot connect from this level.")
-    
+
         if getattr(cls, "pool", None) is not None:
             raise RuntimeError("Already connected!")
 
@@ -37,12 +37,12 @@ class DBManager:
         for name, repo in cls._repos.items():
             logger.info(f"Repo {name} ready.")
             repo.pool = cls.pool
-    
+
     @classmethod
     async def disconnect(cls) -> None:
         if cls == DBManager:
             raise RuntimeError("Cannot disconnect from this level.")
-    
-        if getattr(cls, "pool") is None:
+
+        if cls.pool is None:
             raise RuntimeError("Connect first!")
         await cls.pool.close()

@@ -1,6 +1,7 @@
 import asyncio
 from asyncio import Queue
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Self, get_args
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, ClassVar, get_args
 
 from aiosonic.web_socket_client import WebSocketClient, WebSocketConnection
 from loguru import logger
@@ -10,18 +11,19 @@ from schemas.types import Trade
 
 
 class BaseTradePayload(BaseModel):
-    def to_trade(self) -> Trade:
-        ...
+    def to_trade(self) -> Trade:  # type: ignore
+        """Transform provider trade into internal structure."""
 
 
 class RTTradesProvider[T: BaseTradePayload]:
     """Base class for Real Time Trades Provider"""
+
     if TYPE_CHECKING:
         __payload_type__: type[T]
         ws_url: ClassVar[str]
 
     __ws_client__: ClassVar[WebSocketClient] = WebSocketClient()
-    __trade_providers__: ClassVar[list[type[Self]]] = []
+    __trade_providers__: ClassVar[list[type["RTTradesProvider"]]] = []
     __trades_queue__: ClassVar[Queue[Trade]] = Queue(maxsize=1_000)
     _connection_retry_period: ClassVar[int] = 10
 
@@ -32,7 +34,7 @@ class RTTradesProvider[T: BaseTradePayload]:
     def __init_subclass__(cls) -> None:
         if getattr(cls, "ws_url", None) is None:
             raise RuntimeError(f"{cls.__name__} must have ws_url defined.")
-        
+
         RTTradesProvider.__trade_providers__.append(cls)
         for org in cls.__orig_bases__:  #type: ignore
             cls.__payload_type__ = get_args(org)[0]
@@ -49,7 +51,7 @@ class RTTradesProvider[T: BaseTradePayload]:
 
     async def get_conn_sub_message(self) -> Iterable[tuple[list[dict[str, Any]], float | None]]:
         """
-        Generate subscription messages. 
+        Generate subscription messages.
         Number of items in returned iterable will define the number of connections
         """
         return []
@@ -61,7 +63,7 @@ class RTTradesProvider[T: BaseTradePayload]:
     async def stop(self) -> None:
         for listener in self._listeners:
             listener.cancel()
-    
+
         for conn in self._connections:
             if conn.connected:
                 await conn.close()
@@ -76,7 +78,7 @@ class RTTradesProvider[T: BaseTradePayload]:
         self._connections.append(conn)
         listener = asyncio.create_task(self._listen(conn, sub_msgs, sub_msg_delay=sub_msg_delay))
         self._listeners.append(listener)
-        
+
         def __retry_callback(fut: asyncio.Future[None]) -> None:
             if fut.cancelled():
                 return
@@ -87,23 +89,23 @@ class RTTradesProvider[T: BaseTradePayload]:
             self._listeners.remove(listener)
             asyncio.get_running_loop().call_later(
                 self._connection_retry_period,
-                lambda s_msgs=sub_msgs: asyncio.create_task(self._connect_and_listen(s_msgs))
+                lambda s_msgs=sub_msgs: asyncio.create_task(self._connect_and_listen(s_msgs))  # type: ignore
             )
-        
+
         listener.add_done_callback(__retry_callback)
 
     async def _listen(
         self,
         conn: WebSocketConnection,
         sub_message: list[dict[str,  Any]],
-        sub_msg_delay: float | None = None 
+        sub_msg_delay: float | None = None
     ) -> None:
         for sm in sub_message:
             await conn.send_json(sm)
             # If provider has restriction on rate of subscription message. Ex: Binance has 5 msg/sec
             if sub_msg_delay:
                 await asyncio.sleep(sub_msg_delay)
-        
+
         # Loop will finish in case of server disconnect
         async for msg in conn:
             try:

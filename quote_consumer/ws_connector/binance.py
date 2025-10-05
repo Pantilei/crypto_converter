@@ -1,7 +1,8 @@
+from collections.abc import Iterable
 from decimal import Decimal
 from enum import StrEnum
 from itertools import batched
-from typing import Any, ClassVar, Iterable, TypedDict
+from typing import ClassVar, TypedDict
 from uuid import uuid4
 
 import ujson

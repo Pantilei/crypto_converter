@@ -16,7 +16,7 @@ class LifeSpan:
 
     def __init__(self, app: FastAPI) -> None:
         self._app = app
-    
+
     async def __aenter__(self) -> dict:
         logger.info("Stating application")
         await DB.connect(dsn=str(settings.DB_SERVICE))
@@ -28,7 +28,7 @@ class LifeSpan:
         return {}
 
     async def __aexit__(
-        self, exc_type: type[BaseException], exc_val: BaseException, traceback: type[TracebackType]
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, traceback: TracebackType | None
     ) -> None:
         logger.info("Stopping application")
         await self._trades_provider.stop()

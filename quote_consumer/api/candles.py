@@ -19,7 +19,7 @@ async def get_candle(
     """
     if (ticker_buffer := in_memory_storage.get(ticker)) is None:
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="ticker_not_in_memory")
-    
+
     if not (sorted_timestamps := sorted(ticker_buffer.keys())):
         raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="no_candles_for_ticker")
 
@@ -27,7 +27,7 @@ async def get_candle(
     if timestamp is None or timestamp > sorted_timestamps[-1]:
         latest_timestamp = sorted_timestamps[-1]
         return  ticker_buffer[latest_timestamp]
-    
+
     if candle := ticker_buffer.get(timestamp):
         return candle
 
@@ -35,5 +35,5 @@ async def get_candle(
     for ts in reversed(sorted_timestamps):
         if ts < timestamp:
             return ticker_buffer[ts]
-    
+
     raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail="too_old_timestamp")

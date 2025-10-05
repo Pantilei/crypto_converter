@@ -47,4 +47,4 @@ async def _patched_frame_dispatch_loop(self: WebSocketConnection) -> None:
         self.connected = False
 
 # Monkey patch
-WebSocketConnection._frame_dispatch_loop = _patched_frame_dispatch_loop
+WebSocketConnection._frame_dispatch_loop = _patched_frame_dispatch_loop  # noqa: SLF001

@@ -27,7 +27,7 @@ class InMemoryQuoteService:
         except Exception as ex:
             logger.error(f"Service {cls.__name__} not working.")
             raise InMemoryQuoteServiceError from ex
-    
+
         if not resp.ok:
             raise InMemoryQuoteServiceError
 

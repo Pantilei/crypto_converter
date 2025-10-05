@@ -1,5 +1,5 @@
+from collections.abc import AsyncIterable, Iterable
 from datetime import UTC, datetime
-from typing import AsyncIterable, Iterable
 
 from db.queries.queries import queries
 from db.repositories.base import BaseRepo
@@ -12,7 +12,7 @@ class Candles1sRepo(BaseRepo):
         if not (db_candles := [_candle_to_db(cndl) for cndl in candles]):
             return
         await queries.bulk_upsert_candles(self.pool, db_candles)
-    
+
     async def remove_old_candles(self, to: datetime) -> None:
         await queries.remove_old_candles(self.pool, till=to)
 
@@ -22,7 +22,7 @@ class Candles1sRepo(BaseRepo):
         if not (rec := await queries.get_latest_candle(self.pool, ticker=ticker, till_dt=timestamp.to_dt())):
             return None
         return _db_candle_to_candle(rec)
-    
+
     async def get_candles(self, from_: datetime, to: datetime | None = None) -> AsyncIterable[Candle]:
         if to is None:
             to = datetime.now(tz=UTC)

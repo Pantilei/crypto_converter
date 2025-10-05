@@ -1,9 +1,9 @@
 import asyncio
 import traceback
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from time import monotonic
-from typing import Iterable
 
 from loguru import logger
 
@@ -40,7 +40,7 @@ class TradesToCandleProcessor:
         for tsk in self._background_tasks:
             tsk.cancel()
         await self._flush()
-    
+
     async def _trades_to_buffer_processor(self) -> None:
         while trade := await self._data_provider.get():
             aligned_t = Timestamp(trade.t // 1000)  # Milliseconds alined to seconds
@@ -50,7 +50,7 @@ class TradesToCandleProcessor:
                 ticker_buffer[aligned_t] = trade.to_candle()
                 continue
             candle.update(trade)
-    
+
     async def _periodic_buffer_cleaner(self) -> None:
         while True:
             await asyncio.sleep(self._configs.buffer_clean_period)
@@ -58,17 +58,17 @@ class TradesToCandleProcessor:
             to_remove_count = 0
             for ts_to_candle in self._storage_buffer.values():
                 ts_to_remove: list[Timestamp] = []
-                for ts in ts_to_candle.keys():
+                for ts in ts_to_candle:
                     if ts <= remove_till:
                         ts_to_remove.append(ts)
                         to_remove_count += 1
 
                 for ts in ts_to_remove:
                     ts_to_candle.pop(ts, None)
-            
+
             msg = f"Buffer removed candles count: {to_remove_count}. Tickers in buffer: {len(self._storage_buffer)}"
             logger.info(msg)
-    
+
     async def _periodic_flusher_to_db(self) -> None:
         while True:
             await asyncio.sleep(self._configs.flush_to_db_period)
@@ -87,7 +87,7 @@ class TradesToCandleProcessor:
                 logger.error(traceback.format_exc())
                 continue
             logger.info(f"Removed in {timedelta(seconds=monotonic() - t_start)}s")
-    
+
     def _get_flushable_candles(self) -> Iterable[Candle]:
         candles_count = 0
         for ticker, tss in self._tickers_with_updated_prices.items():

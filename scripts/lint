@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -e
+set -x
+
+ruff check currency_conversion quote_consumer db schemas
+mypy currency_conversion quote_consumer db schemas
