@@ -7,7 +7,7 @@ class Settings(BaseSettings):
 
     DEBUG: bool = True
     DB_SERVICE: PostgresDsn
-    ALLOWED_ORIGINS: list[str]
+    ALLOWED_ORIGINS: list[str] = ["*"]
     APP_PORT: int = Field(9000, validation_alias="CURRENCY_CONVERSION_APP_PORT")
     QUOTE_CONSUMER_SERVICE: HttpUrl = HttpUrl("http://localhost:9005")
 

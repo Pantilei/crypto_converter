@@ -49,6 +49,7 @@ services:
       sh -c "uv run python -m currency_conversion"
     environment:
       DEBUG: ${DEBUG:-false}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       DB_SERVICE: ${DB_SERVICE:-postgresql://postgres:postgres@db:5432/crypto_converter}
       CURRENCY_CONVERSION_APP_PORT: ${CURRENCY_CONVERSION_APP_PORT:-9000}
       QUOTE_CONSUMER_SERVICE: http://quote_consumer:${QUOTE_CONSUMER_APP_PORT:-9005}
