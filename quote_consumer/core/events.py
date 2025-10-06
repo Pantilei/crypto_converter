@@ -11,7 +11,6 @@ from quote_consumer.ws_connector.base import RTTradesProvider
 
 
 class LifeSpan:
-    _trades_provider: RTTradesProvider
     _trds_to_cndl_pr: TradesToCandleProcessor
 
     def __init__(self, app: FastAPI) -> None:
@@ -20,9 +19,8 @@ class LifeSpan:
     async def __aenter__(self) -> dict:
         logger.info("Stating application")
         await DB.connect(dsn=str(settings.DB_SERVICE))
-        self._trades_provider = RTTradesProvider()
-        await self._trades_provider.run()
-        self._trds_to_cndl_pr = TradesToCandleProcessor(self._trades_provider.trades_queue)
+        await RTTradesProvider.run()
+        self._trds_to_cndl_pr = TradesToCandleProcessor(RTTradesProvider.get_trade_queue())
         await self._trds_to_cndl_pr.run()
         self._app.state.in_memory_storage = self._trds_to_cndl_pr.buffer
         return {}
@@ -31,7 +29,7 @@ class LifeSpan:
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, traceback: TracebackType | None
     ) -> None:
         logger.info("Stopping application")
-        await self._trades_provider.stop()
+        await RTTradesProvider.stop()
         await self._trds_to_cndl_pr.stop()
         await DB.disconnect()
         del self._app.state.in_memory_storage
